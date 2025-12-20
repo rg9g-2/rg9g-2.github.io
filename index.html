@@ -3,176 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to rg9g-2</title>
+    <title>RG9G-2 | Digital Hub</title>
+    <!-- Importing modern fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* CSS Reset & Variables */
         :root {
-            --primary-orange: #ff7e5f;
-            --secondary-orange: #feb47b;
-            --dark-bg: #1a1a1a;
-            --card-bg: #252525;
-            --text-color: #ffffff;
-            --text-muted: #a0a0a0;
+            --primary: #ff7e5f;
+            --secondary: #feb47b;
+            --accent: #ff4d21;
+            --bg-dark: #0a0a0a;
+            --card-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.1);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background-color: var(--dark-bg);
-            /* Subtle animated background gradient */
-            background: radial-gradient(circle at top right, #331a10 0%, var(--dark-bg) 40%);
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
             height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: var(--text-color);
             overflow: hidden;
+            perspective: 1000px;
         }
 
-        /* Main Container Card */
-        .container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 126, 95, 0.2);
-            border-radius: 24px;
-            padding: 3rem 2rem;
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            animation: fadeInUp 1s ease-out;
-            position: relative;
-        }
-
-        /* Decorative top orange line */
-        .container::before {
-            content: '';
-            position: absolute;
+        /* Animated Background Blobs */
+        .bg-blobs {
+            position: fixed;
             top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 0 15px var(--primary-orange);
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(80px);
+            opacity: 0.6;
         }
 
-        /* Icon Styling */
-        .icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+        .blob {
+            position: absolute;
             border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            animation: move 20s infinite alternate;
+        }
+
+        .blob-1 { width: 400px; height: 400px; top: -100px; left: -100px; background: var(--accent); }
+        .blob-2 { width: 300px; height: 300px; bottom: -50px; right: -50px; animation-delay: -5s; }
+        .blob-3 { width: 250px; height: 250px; top: 40%; left: 50%; background: #5f2c1d; animation-delay: -10s; }
+
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(100px, 50px) scale(1.1); }
+        }
+
+        /* Main Glass Card */
+        .card {
+            background: var(--card-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 32px;
+            padding: 4rem 3rem;
+            max-width: 550px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: cardEntrance 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+            transition: transform 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) rotateX(2deg);
+            border-color: rgba(255, 126, 95, 0.4);
+        }
+
+        /* Animated Icon */
+        .icon-wrapper {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 2rem;
+        }
+
+        .icon-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 30px;
+            transform: rotate(45deg);
+            animation: pulse 3s infinite;
+        }
+
+        .icon-content {
+            position: relative;
+            z-index: 2;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 0 auto 1.5rem auto;
-            box-shadow: 0 10px 20px rgba(255, 126, 95, 0.3);
+            height: 100%;
         }
 
-        .icon svg {
-            width: 40px;
-            height: 40px;
+        .icon-content svg {
+            width: 45px;
+            height: 45px;
             fill: white;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
         }
 
         /* Typography */
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #fff, #ffd1b3);
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 1rem;
+            background: linear-gradient(to bottom, #fff 40%, #888);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 700;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--secondary);
+            border: 1px solid rgba(254, 180, 123, 0.2);
+            margin-bottom: 1.5rem;
         }
 
         .subtitle {
+            color: #a0a0a0;
             font-size: 1.1rem;
-            color: var(--text-muted);
-            margin-bottom: 2rem;
             line-height: 1.6;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
         }
 
-        /* The Disclaimer Badge */
-        .badge {
-            display: inline-block;
-            padding: 8px 16px;
-            background: rgba(255, 126, 95, 0.15);
-            color: var(--primary-orange);
-            border: 1px solid rgba(255, 126, 95, 0.3);
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-bottom: 2rem;
-        }
-
-        /* Button Styling */
-        .btn {
-            display: inline-block;
-            padding: 12px 35px;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
-            color: white;
+        /* Modern Button */
+        .cta-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            padding: 16px 40px;
+            background: #fff;
+            color: #000;
             text-decoration: none;
-            border-radius: 30px;
-            font-weight: 600;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+            border-radius: 16px;
+            font-weight: 700;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 126, 95, 0.6);
+        .cta-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
         }
 
-        /* Animation */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .cta-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 480px) {
-            h1 { font-size: 2rem; }
-            .container { padding: 2rem 1.5rem; }
+        .cta-btn:hover::after {
+            left: 100%;
+        }
+
+        /* HUGE FOOTER TEXT */
+        .footer-branding {
+            position: fixed;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 1;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .footer-branding h2 {
+            font-size: 20vw;
+            font-weight: 900;
+            margin: 0;
+            line-height: 0.8;
+            background: linear-gradient(to top, rgba(255,255,255,0.05) 0%, transparent 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1vw;
+        }
+
+        /* Animations */
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(50px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { transform: rotate(45deg) scale(1); box-shadow: 0 0 0 0 rgba(255, 126, 95, 0.4); }
+            70% { transform: rotate(45deg) scale(1.05); box-shadow: 0 0 0 20px rgba(255, 126, 95, 0); }
+            100% { transform: rotate(45deg) scale(1); }
+        }
+
+        /* Grain Overlay for Texture */
+        .grain {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .card { padding: 3rem 1.5rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Logo Icon (GitHub Style) -->
-        <div class="icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-        </div>
+    <div class="grain"></div>
 
-        <h1>Welcome to rg9g-2</h1>
-        
-        <div class="badge">
-            Educational Purposes Only
-        </div>
-
-        <p class="subtitle">
-            This profile is used for educational and entertainment purposes only. Be careful. And yes this website is made by AI
-        </p>
-
-        <a href="https://github.com/rg9g-2" class="btn">View on GitHub</a>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
     </div>
 
+    <div class="card">
+        <div class="icon-wrapper">
+            <div class="icon-bg"></div>
+            <div class="icon-content">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="badge">Hi</div>
+        
+        <h1>rg9g-2</h1>
+        
+        <p class="subtitle">
+            this profile on github is used for rdp and other things like free vps or hosting a custom hosting on github codespaces.
+        </p>
+
+        <a href="https://github.com/rg9g-2" class="cta-btn">
+            Explore Profile
+        </a>
+    </div>
+
+    <div class="footer-branding">
+        <h2>RG9G</h2>
+    </div>
+
+    <script>
+        // Optional: Subtle 3D tilt effect on mouse move
+        const card = document.querySelector('.card');
+        document.addEventListener('mousemove', (e) => {
+            let xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            let yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Reset transform when mouse leaves
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
+    </script>
 </body>
 </html>
