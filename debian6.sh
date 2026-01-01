@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # ==========================================
-# CentOS 9 VM Manager (v7 - Network Fixed)
+# CentOS 9 VM Manager (v8 - DNS Force Edition)
 # ==========================================
 
 # --- Configuration ---
 VM_DIR="$HOME/qemu_vms"
 IMG_DIR="$VM_DIR/images"
-# Debian 12 Bookworm (Stable)
 DEBIAN_URL="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-genericcloud-amd64.qcow2"
 BASE_IMG_PATH="$IMG_DIR/debian-12-base.qcow2"
 
@@ -49,7 +48,7 @@ function check_dependencies() {
     fi
 
     if ! command -v virt-customize &> /dev/null; then
-        echo -e "${YELLOW}Installing libguestfs-tools (Critical for network config)...${NC}"
+        echo -e "${YELLOW}Installing libguestfs-tools...${NC}"
         sudo dnf install -y guestfs-tools
     fi
 }
@@ -57,7 +56,7 @@ function check_dependencies() {
 # --- 2. Create VM ---
 function create_vm() {
     clear
-    echo -e "${YELLOW}--- Create New Debian 12 VM --- v2${NC}"
+    echo -e "${YELLOW}--- Create New Debian 12 VM --- v3${NC}"
     
     read -p "Enter VM Name: " VM_NAME
     if [ -z "$VM_NAME" ]; then return; fi
@@ -76,27 +75,34 @@ function create_vm() {
     cp "$BASE_IMG_PATH" "$VM_DIR/$VM_NAME.qcow2"
     qemu-img resize "$VM_DIR/$VM_NAME.qcow2" "$DISK_SIZE" &>/dev/null
 
-    echo -e "${BLUE}2. INJECTING NETWORK FIXES (virt-customize)...${NC}"
-    echo -e "${YELLOW}Please wait 30-60 seconds...${NC}"
+    echo -e "${BLUE}2. Configuring Network & DNS...${NC}"
+    echo -e "${YELLOW}Running virt-customize...${NC}"
 
-    # We configure eth0 AND ens3 AND ens4 to ensure one of them hits the QEMU device.
-    # We also force standard DNS.
+    # We use a Here-Doc to create a clean interfaces file
+cat <<EOF > /tmp/interfaces
+auto lo
+iface lo inet loopback
+
+allow-hotplug ens3
+iface ens3 inet dhcp
+
+allow-hotplug eth0
+iface eth0 inet dhcp
+EOF
+
+    # We inject the interfaces file AND force resolv.conf
     export LIBGUESTFS_BACKEND=direct
     virt-customize -a "$VM_DIR/$VM_NAME.qcow2" \
         --root-password password:root \
         --uninstall cloud-init \
-        --run-command 'echo "auto lo" > /etc/network/interfaces' \
-        --run-command 'echo "iface lo inet loopback" >> /etc/network/interfaces' \
-        --run-command 'echo "allow-hotplug ens3" >> /etc/network/interfaces' \
-        --run-command 'echo "iface ens3 inet dhcp" >> /etc/network/interfaces' \
-        --run-command 'echo "allow-hotplug ens4" >> /etc/network/interfaces' \
-        --run-command 'echo "iface ens4 inet dhcp" >> /etc/network/interfaces' \
-        --run-command 'echo "allow-hotplug eth0" >> /etc/network/interfaces' \
-        --run-command 'echo "iface eth0 inet dhcp" >> /etc/network/interfaces' \
-        --run-command 'echo "nameserver 8.8.8.8" > /etc/resolv.conf'
+        --upload /tmp/interfaces:/etc/network/interfaces \
+        --run-command 'echo "nameserver 8.8.8.8" > /etc/resolv.conf' \
+        --run-command 'echo "nameserver 1.1.1.1" >> /etc/resolv.conf'
+
+    rm -f /tmp/interfaces
 
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}VM Ready! Login: root / root${NC}"
+        echo -e "${GREEN}VM Configured.${NC}"
     else
         echo -e "${RED}Configuration failed.${NC}"
     fi
@@ -118,11 +124,10 @@ function run_vm() {
     read -p "Cores (e.g. 2): " CPU_CORES
     read -p "GUI Window? (y/n): " USE_GUI
 
+    # === NETWORK CONFIG ===
+    # We reverted to the standard, reliable flags.
     CMD="$QEMU_CMD -m $RAM_SIZE -smp $CPU_CORES -drive file=$DISK_PATH,format=qcow2"
-    
-    # === NETWORK FIX: Force DNS ===
-    # We add dns=8.8.8.8 to the QEMU user network stack
-    CMD="$CMD -device virtio-net-pci,netdev=net0 -netdev user,id=net0,dns=8.8.8.8"
+    CMD="$CMD -device virtio-net-pci,netdev=net0 -netdev user,id=net0"
     
     if [ -e /dev/kvm ]; then CMD="$CMD -enable-kvm -cpu host"; fi
 
@@ -131,6 +136,7 @@ function run_vm() {
         CMD="$CMD -vnc :0 -vga qxl"
     else
         echo -e "${GREEN}Starting Console...${NC}"
+        echo -e "${YELLOW}Use 'ping 8.8.8.8' to test connectivity inside.${NC}"
         CMD="$CMD -nographic"
     fi
 
@@ -156,7 +162,7 @@ check_dependencies
 while true; do
     clear
     echo -e "${CYAN}=== CentOS 9 VM Manager (Debian 12) ===${NC}"
-    echo "1. Create VM (Recreate for Net Fix)"
+    echo "1. Create VM (Recreate needed for fix)"
     echo "2. Run VM"
     echo "3. Delete VM"
     echo "4. Exit"
