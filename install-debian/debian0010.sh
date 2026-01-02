@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-#  FEDORA KVM HYPERVISOR // ULTRA HUD EDITION
+#  FEDORA KVM HYPERVISOR // FIXED EDITION
 # ==============================================================================
 
 # --- THEME CONFIGURATION ---
@@ -40,18 +40,13 @@ draw_box() {
 }
 
 print_status() {
-    local row=$1
-    local label=$2
-    local status=$3
-    local color=$4
+    local row=$1; local label=$2; local status=$3; local color=$4
     cursor_to $row 4
     printf "${C_CYAN}%-20s ${C_GREY}:: ${color}%s${NC}" "$label" "$status"
 }
 
 progress_bar() {
-    local row=$1
-    local percent=$2
-    local bar_len=40
+    local row=$1; local percent=$2; local bar_len=40
     local fill=$(( (percent * bar_len) / 100 ))
     cursor_to $row 4
     printf "${C_CYAN}PROGRESS [${C_GREEN}"
@@ -67,7 +62,7 @@ draw_box 18 70 "FEDORA HYPERVISOR // SYSTEM INITIALIZATION"
 # 1. DEPENDENCY CHECK
 print_status 4 "SYSTEM SCAN" "CHECKING MODULES..." "${C_WHITE}"
 if ! command -v qemu-img &> /dev/null || ! command -v virt-customize &> /dev/null; then
-    print_status 4 "SYSTEM SCAN" "INSTALLING DEPENDENCIES (DNF)" "${C_WARN}"
+    print_status 4 "SYSTEM SCAN" "INSTALLING DEPENDENCIES..." "${C_WARN}"
     sudo dnf install qemu-kvm guestfs-tools wget -y -q > /dev/null 2>&1
 fi
 print_status 4 "SYSTEM SCAN" "ONLINE" "${C_GREEN}"
@@ -83,7 +78,6 @@ print_status 5 "HYPERVISOR" "ACTIVE ($QEMU)" "${C_GREEN}"
 if [ ! -f "$DISK_NAME" ]; then
     print_status 6 "DISK IMAGE" "DOWNLOADING DEBIAN 11..." "${C_WARN}"
     
-    # Download with progress simulation for the HUD
     wget -q --show-progress -O "${DISK_NAME}.base" "$URL" &
     PID=$!
     while kill -0 $PID 2>/dev/null; do
@@ -98,19 +92,18 @@ if [ ! -f "$DISK_NAME" ]; then
     qemu-img resize "$DISK_NAME" "$DISK_SIZE" > /dev/null 2>&1
     print_status 7 "STORAGE ALLOC" "OPTIMIZED ($DISK_SIZE)" "${C_GREEN}"
 
-    # 4. SECURITY & NETWORK INJECTION
-    print_status 8 "SECURITY LAYER" "INJECTING ROOT ACCESS..." "${C_WARN}"
-    print_status 9 "NETWORK LINK" "CONFIGURING DHCP..." "${C_WARN}"
+    # 4. SECURITY & CONSOLE INJECTION
+    print_status 8 "SECURITY LAYER" "INJECTING ROOT & CONSOLE..." "${C_WARN}"
     
-    # Fedora Direct Backend Fix
     export LIBGUESTFS_BACKEND=direct
     
-    # RESET PASSWORD AND FORCE NETWORK ON
+    # We edit GRUB to force Serial Console output so you can see it in terminal
     virt-customize -a "$DISK_NAME" \
         --root-password password:root \
         --run-command 'sed -i "s/PasswordAuthentication no/PasswordAuthentication yes/g" /etc/ssh/sshd_config' \
         --run-command 'sed -i "s/PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config' \
-        --run-command 'systemctl enable systemd-networkd' \
+        --run-command 'sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"console=ttyS0\"/" /etc/default/grub' \
+        --run-command 'update-grub' \
         --selinux-relabel > /dev/null 2>&1
         
     print_status 8 "SECURITY LAYER" "BYPASSED (User: root)" "${C_GREEN}"
@@ -128,10 +121,10 @@ print_status 12 "CPU ALLOCATION" "$CORES V-CORES" "${C_WHITE}"
 
 # 6. LAUNCH
 cursor_to 16 4
-echo -e "${C_WHITE}LAUNCHING VIRTUAL MACHINE... (Press ${C_WARN}Ctrl+A${C_WHITE} then ${C_WARN}X${C_WHITE} to Force Quit)${NC}"
+echo -e "${C_WHITE}LAUNCHING VM... (Press ${C_WARN}Ctrl+A${C_WHITE} then ${C_WARN}X${C_WHITE} to Force Quit)${NC}"
 sleep 2
 
-# Clear HUD and launch
+# Clear HUD and launch - REMOVED THE -APPEND FLAG
 clear
 $QEMU \
     -name "$VM_NAME" \
@@ -141,5 +134,4 @@ $QEMU \
     -cpu host \
     -drive file="$DISK_NAME",format=qcow2,if=virtio \
     -nographic \
-    -netdev user,id=net0 -device virtio-net-pci,netdev=net0 \
-    -append "root=/dev/vda1 console=ttyS0 rw"
+    -netdev user,id=net0 -device virtio-net-pci,netdev=net0
