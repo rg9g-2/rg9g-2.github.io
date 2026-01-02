@@ -1,49 +1,58 @@
 #!/bin/bash
 
 # --- CONFIGURATION ---
-VM_NAME="Debian 11 VM"
-RAM="15G"               # 15 GB RAM
-CORES="6"               # 6 CPU Cores
-DISK_SIZE="76G"         # 76 GB Disk Size
-DISK_NAME="debian11.qcow2"
-ISO_FILE="debian-11-amd64-netinst.iso" 
+VM_NAME="Debian 11 Auto-Cloud"
+RAM="15G"
+CORES="6"
+TARGET_DISK_SIZE="76G"
 
-# --- CHECKS ---
+# URLs and Filenames
+DEBIAN_URL="https://cloud.debian.org/images/cloud/bullseye/latest/debian-11-generic-amd64.qcow2"
+BASE_IMAGE="debian-11-base.qcow2"
+RUN_IMAGE="debian-11-76G.qcow2"
 
-# 1. Check if KVM is supported on host
-if [ ! -e /dev/kvm ]; then
-    echo "Error: KVM is not supported or enabled on this machine."
-    exit 1
+# --- STEP 1: DOWNLOAD ---
+if [ ! -f "$BASE_IMAGE" ]; then
+    echo "Base image not found. Downloading official Debian 11 Cloud Image..."
+    echo "Source: $DEBIAN_URL"
+    wget -O "$BASE_IMAGE" "$DEBIAN_URL"
+    if [ $? -ne 0 ]; then
+        echo "Error: Download failed."
+        exit 1
+    fi
+    echo "Download complete."
+else
+    echo "Base image already exists. Skipping download."
 fi
 
-# 2. Check if the ISO file exists
-if [ ! -f "$ISO_FILE" ]; then
-    echo "Error: ISO file '$ISO_FILE' not found!"
-    echo "Please download Debian 11 and place it in this folder, or update the ISO_FILE variable."
-    exit 1
+# --- STEP 2: PREPARE AND RESIZE DISK ---
+if [ ! -f "$RUN_IMAGE" ]; then
+    echo "Creating working disk from base image..."
+    # Copy the base image so we don't have to download it again if we mess up
+    cp "$BASE_IMAGE" "$RUN_IMAGE"
+    
+    echo "Resizing disk to $TARGET_DISK_SIZE..."
+    qemu-img resize "$RUN_IMAGE" "$TARGET_DISK_SIZE"
+    echo "Disk resized."
 fi
 
-# 3. Create the Hard Disk if it doesn't exist
-if [ ! -f "$DISK_NAME" ]; then
-    echo "Creating $DISK_SIZE qcow2 hard disk..."
-    qemu-img create -f qcow2 "$DISK_NAME" "$DISK_SIZE"
-    echo "Disk created."
-fi
+# --- STEP 3: WARNING ABOUT PASSWORD ---
+echo "----------------------------------------------------------------"
+echo "IMPORTANT: This is a Cloud Image. It has NO DEFAULT PASSWORD."
+echo "If you have not set a password using 'virt-customize' or 'cloud-init',"
+echo "you may be unable to log in at the prompt."
+echo "----------------------------------------------------------------"
+read -p "Press Enter to launch QEMU..."
 
-# --- LAUNCH QEMU ---
-echo "Starting $VM_NAME..."
-echo "RAM: $RAM | Cores: $CORES | Disk: $DISK_SIZE"
-echo "Press Ctrl+Alt+G to release mouse cursor if captured."
-
+# --- STEP 4: LAUNCH QEMU ---
+# We use virtio-scsi here for better disk performance on resized images
 qemu-system-x86_64 \
     -name "$VM_NAME" \
     -enable-kvm \
     -m $RAM \
     -smp $CORES \
     -cpu host \
-    -drive file="$DISK_NAME",format=qcow2,if=virtio \
-    -cdrom "$ISO_FILE" \
-    -boot menu=on \
+    -drive file="$RUN_IMAGE",format=qcow2,if=virtio \
     -vga virtio \
     -display default \
     -device intel-hda -device hda-duplex \
